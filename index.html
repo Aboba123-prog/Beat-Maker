@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beat Maker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="img/beat_maker_logo.png">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>BEAT MAKER v6</h1>
+            <div class="step-counter">
+                <span>16 STEPS</span>
+            </div>
+        </div>
+        
+        <div class="top-controls">
+            <div class="control-group">
+                <label for="bpm">BPM</label>
+                <input type="range" id="bpm" min="40" max="200" value="120">
+                <span id="bpmValue">120</span>
+            </div>
+            
+            <div class="control-group">
+                <label for="swing">SWING</label>
+                <input type="range" id="swing" min="0" max="100" value="0">
+                <span id="swingValue">0%</span>
+            </div>
+
+            <div class="control-group">
+                <label for="volume">VOL</label>
+                <input type="range" id="volume" min="0" max="100" value="70">
+                <span id="volumeValue">70%</span>
+            </div>
+
+            <div class="buttons">
+                <button id="playBtn" class="btn btn-play">▶ PLAY</button>
+                <button id="stopBtn" class="btn btn-stop">⏹ STOP</button>
+                <button id="clearBtn" class="btn btn-clear">🗑️ CLEAR</button>
+            </div>
+        </div>
+
+        <div class="sequencer">
+            <div class="step-numbers">
+                <div class="step-num">1</div>
+                <div class="step-num">2</div>
+                <div class="step-num">3</div>
+                <div class="step-num">4</div>
+                <div class="step-num">5</div>
+                <div class="step-num">6</div>
+                <div class="step-num">7</div>
+                <div class="step-num">8</div>
+                <div class="step-num">9</div>
+                <div class="step-num">10</div>
+                <div class="step-num">11</div>
+                <div class="step-num">12</div>
+                <div class="step-num">13</div>
+                <div class="step-num">14</div>
+                <div class="step-num">15</div>
+                <div class="step-num">16</div>
+            </div>
+
+            <div class="pads">
+                <div class="pad-row">
+                    <span class="pad-label">KICK</span>
+                    <div class="pad-group" data-sound="kick"></div>
+                    <span class="mute-btn" data-sound="kick">M</span>
+                </div>
+                <div class="pad-row">
+                    <span class="pad-label">SNARE</span>
+                    <div class="pad-group" data-sound="snare"></div>
+                    <span class="mute-btn" data-sound="snare">M</span>
+                </div>
+                <div class="pad-row">
+                    <span class="pad-label">HI-HAT</span>
+                    <div class="pad-group" data-sound="hihat"></div>
+                    <span class="mute-btn" data-sound="hihat">M</span>
+                </div>
+                <div class="pad-row">
+                    <span class="pad-label">TOM HI</span>
+                    <div class="pad-group" data-sound="tomhi"></div>
+                    <span class="mute-btn" data-sound="tomhi">M</span>
+                </div>
+                <div class="pad-row">
+                    <span class="pad-label">TOM MID</span>
+                    <div class="pad-group" data-sound="tommid"></div>
+                    <span class="mute-btn" data-sound="tommid">M</span>
+                </div>
+                <div class="pad-row">
+                    <span class="pad-label">TOM LOW</span>
+                    <div class="pad-group" data-sound="tomlow"></div>
+                    <span class="mute-btn" data-sound="tomlow">M</span>
+                </div>
+                <div class="pad-row">
+                    <span class="pad-label">PERC 1</span>
+                    <div class="pad-group" data-sound="perc1"></div>
+                    <span class="mute-btn" data-sound="perc1">M</span>
+                </div>
+                <div class="pad-row">
+                    <span class="pad-label">PERC 2</span>
+                    <div class="pad-group" data-sound="perc2"></div>
+                    <span class="mute-btn" data-sound="perc2">M</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info">
+            <p>Нажимайте квадраты для создания битов • M - отключить трек • Экспериментируйте!</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
