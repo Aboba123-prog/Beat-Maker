@@ -69,6 +69,7 @@ function setupControls() {
     const playBtn = document.getElementById('playBtn');
     const stopBtn = document.getElementById('stopBtn');
     const clearBtn = document.getElementById('clearBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
     const bpmInput = document.getElementById('bpm');
     const bpmValue = document.getElementById('bpmValue');
     const swingInput = document.getElementById('swing');
@@ -79,6 +80,7 @@ function setupControls() {
     if (playBtn) playBtn.addEventListener('click', play);
     if (stopBtn) stopBtn.addEventListener('click', stop);
     if (clearBtn) clearBtn.addEventListener('click', clearSequence);
+    if (downloadBtn) downloadBtn.addEventListener('click', downloadSequence);
     
     if (bpmInput) bpmInput.addEventListener('input', (e) => {
         bpm = parseInt(e.target.value);
@@ -151,6 +153,272 @@ function clearSequence() {
     document.querySelectorAll('.mute-btn').forEach(btn => {
         btn.classList.remove('muted');
     });
+}
+
+// Функция скачивания последовательности как WAV файл
+async function downloadSequence() {
+    const downloadBtn = document.getElementById('downloadBtn');
+    const originalText = downloadBtn.textContent;
+    downloadBtn.textContent = '⏳ WAIT...';
+    downloadBtn.disabled = true;
+    
+    try {
+        // Количество повторений последовательности (2 цикла)
+        const numLoops = 2;
+        const totalSeconds = (60 / bpm) * 4 * 16 * numLoops;
+        const sampleRate = 44100;
+        const totalSamples = Math.ceil(totalSeconds * sampleRate);
+        
+        // Создаем offline контекст для рендеринга
+        const offlineContext = new OfflineAudioContext(2, totalSamples, sampleRate);
+        
+        // Проигрываем всю последовательность в offline контекст
+        for (let loop = 0; loop < numLoops; loop++) {
+            for (let step = 0; step < stepsPerBar; step++) {
+                const stepTime = (loop * stepsPerBar + step) * secondsPerBeat();
+                
+                let swingTime = 0;
+                if (step % 2 === 1) {
+                    swingTime = secondsPerBeat() * swing * 0.5;
+                }
+                
+                const scheduleTime = stepTime + swingTime;
+                
+                sounds.forEach(sound => {
+                    if (sequence[sound][step] && !mutedTracks[sound]) {
+                        playSoundOffline(sound, scheduleTime, offlineContext);
+                    }
+                });
+            }
+        }
+        
+        // Рендерим аудио
+        const audioBuffer = await offlineContext.startRendering();
+        
+        // Конвертируем в WAV и скачиваем
+        const wavBlob = audioBufferToWav(audioBuffer);
+        const url = URL.createObjectURL(wavBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `beatmaker-${new Date().toISOString().slice(0, 10)}-${Math.random().toString(36).substr(2, 9)}.wav`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        downloadBtn.textContent = '✓ DONE!';
+        setTimeout(() => {
+            downloadBtn.textContent = originalText;
+            downloadBtn.disabled = false;
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Error downloading sequence:', error);
+        alert('Ошибка при скачивании бита: ' + error.message);
+        downloadBtn.textContent = originalText;
+        downloadBtn.disabled = false;
+    }
+}
+
+// Функция воспроизведения звуков в offline контекст
+function playSoundOffline(sound, time, offlineContext) {
+    const gain = offlineContext.createGain();
+    gain.gain.value = masterVolume;
+    gain.connect(offlineContext.destination);
+    
+    switch(sound) {
+        case 'kick':
+            playKickOffline(time, gain, offlineContext);
+            break;
+        case 'snare':
+            playSnareOffline(time, gain, offlineContext);
+            break;
+        case 'hihat':
+            playHiHatOffline(time, gain, offlineContext);
+            break;
+        case 'tomhi':
+            playTomHiOffline(time, gain, offlineContext);
+            break;
+        case 'tommid':
+            playTomMidOffline(time, gain, offlineContext);
+            break;
+        case 'tomlow':
+            playTomLowOffline(time, gain, offlineContext);
+            break;
+        case 'perc1':
+            playPerc1Offline(time, gain, offlineContext);
+            break;
+        case 'perc2':
+            playPerc2Offline(time, gain, offlineContext);
+            break;
+    }
+}
+
+// Offline версии звуков
+function playKickOffline(time, gain, ctx) {
+    const osc = ctx.createOscillator();
+    osc.connect(gain);
+    osc.frequency.setValueAtTime(150, time);
+    osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.5);
+    gain.gain.setValueAtTime(1 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.5);
+    osc.start(time);
+    osc.stop(time + 0.5);
+}
+
+function playSnareOffline(time, gain, ctx) {
+    const noise = ctx.createBufferSource();
+    const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < buffer.length; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+    noise.buffer = buffer;
+    noise.connect(gain);
+    gain.gain.setValueAtTime(0.3 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.2);
+    noise.start(time);
+    noise.stop(time + 0.2);
+}
+
+function playHiHatOffline(time, gain, ctx) {
+    const noise = ctx.createBufferSource();
+    const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.1, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < buffer.length; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+    noise.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 7000;
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.gain.setValueAtTime(0.15 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.1);
+    noise.start(time);
+    noise.stop(time + 0.1);
+}
+
+function playTomHiOffline(time, gain, ctx) {
+    const osc = ctx.createOscillator();
+    osc.connect(gain);
+    osc.frequency.setValueAtTime(250, time);
+    osc.frequency.exponentialRampToValueAtTime(100, time + 0.12);
+    gain.gain.setValueAtTime(0.4 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.12);
+    osc.start(time);
+    osc.stop(time + 0.12);
+}
+
+function playTomMidOffline(time, gain, ctx) {
+    const osc = ctx.createOscillator();
+    osc.connect(gain);
+    osc.frequency.setValueAtTime(180, time);
+    osc.frequency.exponentialRampToValueAtTime(80, time + 0.15);
+    gain.gain.setValueAtTime(0.4 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.15);
+    osc.start(time);
+    osc.stop(time + 0.15);
+}
+
+function playTomLowOffline(time, gain, ctx) {
+    const osc = ctx.createOscillator();
+    osc.connect(gain);
+    osc.frequency.setValueAtTime(120, time);
+    osc.frequency.exponentialRampToValueAtTime(60, time + 0.18);
+    gain.gain.setValueAtTime(0.4 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.18);
+    osc.start(time);
+    osc.stop(time + 0.18);
+}
+
+function playPerc1Offline(time, gain, ctx) {
+    const osc = ctx.createOscillator();
+    osc.connect(gain);
+    osc.frequency.setValueAtTime(400, time);
+    osc.frequency.exponentialRampToValueAtTime(100, time + 0.1);
+    gain.gain.setValueAtTime(0.3 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.1);
+    osc.start(time);
+    osc.stop(time + 0.1);
+}
+
+function playPerc2Offline(time, gain, ctx) {
+    const osc = ctx.createOscillator();
+    osc.connect(gain);
+    osc.frequency.setValueAtTime(550, time);
+    osc.frequency.exponentialRampToValueAtTime(150, time + 0.08);
+    gain.gain.setValueAtTime(0.25 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.08);
+    osc.start(time);
+    osc.stop(time + 0.08);
+}
+
+// Конвертирование AudioBuffer в WAV
+function audioBufferToWav(audioBuffer) {
+    const numberOfChannels = audioBuffer.numberOfChannels;
+    const sampleRate = audioBuffer.sampleRate;
+    const format = 1; // PCM
+    const bitDepth = 16;
+    
+    const bytesPerSample = bitDepth / 8;
+    const blockAlign = numberOfChannels * bytesPerSample;
+    
+    const channels = [];
+    for (let i = 0; i < numberOfChannels; i++) {
+        channels.push(audioBuffer.getChannelData(i));
+    }
+    
+    let offset = 0;
+    let bufferLength = audioBuffer.length * numberOfChannels * 2 + 36;
+    const arrayBuffer = new ArrayBuffer(bufferLength);
+    const view = new DataView(arrayBuffer);
+    
+    const writeString = (offset, string) => {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    };
+    
+    const floatTo16BitPCM = (output, offset, input) => {
+        for (let i = 0; i < input.length; i++, offset += 2) {
+            const s = Math.max(-1, Math.min(1, input[i]));
+            output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        }
+    };
+    
+    writeString(0, 'RIFF');
+    view.setUint32(4, bufferLength - 8, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, format, true);
+    view.setUint16(22, numberOfChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * blockAlign, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitDepth, true);
+    writeString(36, 'data');
+    view.setUint32(40, audioBuffer.length * numberOfChannels * 2, true);
+    
+    let index = 44;
+    const volume = 1;
+    if (numberOfChannels === 2) {
+        for (let i = 0; i < audioBuffer.length; i++) {
+            floatTo16BitPCM(view, index, channels[0].subarray(i, i + 1));
+            index += 2;
+            floatTo16BitPCM(view, index, channels[1].subarray(i, i + 1));
+            index += 2;
+        }
+    } else {
+        for (let i = 0; i < audioBuffer.length; i++) {
+            floatTo16BitPCM(view, index, channels[0].subarray(i, i + 1));
+            index += 2;
+        }
+    }
+    
+    return new Blob([arrayBuffer], { type: 'audio/wav' });
 }
 
 // Планировщик нот
@@ -245,8 +513,8 @@ function playKick(time, gain) {
     osc.frequency.setValueAtTime(150, time);
     osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.5);
     
-    gain.gain.setValueAtTime(1, time);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+    gain.gain.setValueAtTime(masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.5);
     
     osc.start(time);
     osc.stop(time + 0.5);
@@ -265,8 +533,8 @@ function playSnare(time, gain) {
     noise.buffer = buffer;
     noise.connect(gain);
     
-    gain.gain.setValueAtTime(0.3, time);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+    gain.gain.setValueAtTime(0.3 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.2);
     
     noise.start(time);
     noise.stop(time + 0.2);
@@ -292,8 +560,8 @@ function playHiHat(time, gain) {
     noise.connect(filter);
     filter.connect(gain);
     
-    gain.gain.setValueAtTime(0.15, time);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+    gain.gain.setValueAtTime(0.15 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.1);
     
     noise.start(time);
     noise.stop(time + 0.1);
@@ -308,8 +576,8 @@ function playTomHi(time, gain) {
     osc.frequency.setValueAtTime(250, time);
     osc.frequency.exponentialRampToValueAtTime(100, time + 0.12);
     
-    gain.gain.setValueAtTime(0.4, time);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.12);
+    gain.gain.setValueAtTime(0.4 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.12);
     
     osc.start(time);
     osc.stop(time + 0.12);
@@ -324,8 +592,8 @@ function playTomMid(time, gain) {
     osc.frequency.setValueAtTime(180, time);
     osc.frequency.exponentialRampToValueAtTime(80, time + 0.15);
     
-    gain.gain.setValueAtTime(0.4, time);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
+    gain.gain.setValueAtTime(0.4 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.15);
     
     osc.start(time);
     osc.stop(time + 0.15);
@@ -340,8 +608,8 @@ function playTomLow(time, gain) {
     osc.frequency.setValueAtTime(120, time);
     osc.frequency.exponentialRampToValueAtTime(60, time + 0.18);
     
-    gain.gain.setValueAtTime(0.4, time);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.18);
+    gain.gain.setValueAtTime(0.4 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.18);
     
     osc.start(time);
     osc.stop(time + 0.18);
@@ -356,8 +624,8 @@ function playPerc1(time, gain) {
     osc.frequency.setValueAtTime(400, time);
     osc.frequency.exponentialRampToValueAtTime(100, time + 0.1);
     
-    gain.gain.setValueAtTime(0.3, time);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+    gain.gain.setValueAtTime(0.3 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.1);
     
     osc.start(time);
     osc.stop(time + 0.1);
@@ -372,8 +640,8 @@ function playPerc2(time, gain) {
     osc.frequency.setValueAtTime(550, time);
     osc.frequency.exponentialRampToValueAtTime(150, time + 0.08);
     
-    gain.gain.setValueAtTime(0.25, time);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.08);
+    gain.gain.setValueAtTime(0.25 * masterVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.01 * masterVolume, time + 0.08);
     
     osc.start(time);
     osc.stop(time + 0.08);
