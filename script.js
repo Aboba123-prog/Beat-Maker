@@ -165,7 +165,7 @@ async function downloadSequence() {
     try {
         // Количество повторений последовательности (2 цикла)
         const numLoops = 2;
-        const totalSeconds = (60 / bpm) * 4 * 16 * numLoops;
+        const totalSeconds = secondsPerBeat() * stepsPerBar * numLoops;
         const sampleRate = 44100;
         const totalSamples = Math.ceil(totalSeconds * sampleRate);
         
@@ -371,7 +371,7 @@ function audioBufferToWav(audioBuffer) {
     }
     
     let offset = 0;
-    let bufferLength = audioBuffer.length * numberOfChannels * 2 + 36;
+    let bufferLength = 44 + audioBuffer.length * numberOfChannels * bytesPerSample;
     const arrayBuffer = new ArrayBuffer(bufferLength);
     const view = new DataView(arrayBuffer);
     
