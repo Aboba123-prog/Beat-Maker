@@ -263,6 +263,29 @@ h1 {
         0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
+.btn-load {
+    background: linear-gradient(180deg, #ab47bc 0%, #9c27b0 20%, #8e24aa 50%, #6a1b9a 100%);
+    box-shadow: 
+        inset 0 2px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.6),
+        0 5px 14px rgba(0, 0, 0, 0.6),
+        0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.btn-load:hover {
+    background: linear-gradient(180deg, #ba68c8 0%, #ab47bc 20%, #9c27b0 50%, #7b1fa2 100%);
+}
+
+.btn-download:active {
+    transform: translateY(2px);
+    box-shadow: 
+        inset 0 2px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.8),
+        0 2px 6px rgba(0, 0, 0, 0.4),
+        0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+
 .sequencer {
     background: linear-gradient(180deg, #2a2a2e 0%, #1a1a1e 100%);
     border-radius: 12px;
