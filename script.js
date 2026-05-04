@@ -672,3 +672,56 @@ window.addEventListener('beforeunload', () => {
         stop();
     }
 });
+
+const fileInput = document.getElementById('fileInput');
+const loadBtn = document.querySelector('.btn-load');
+
+loadBtn.addEventListener('click', () => {
+    fileInput.click();
+});
+
+fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+        const data = JSON.parse(event.target.result);
+
+        // восстановление
+        Object.assign(sequence, data.sequence);
+        Object.assign(mutedTracks, data.mutedTracks);
+        bpm = data.bpm;
+        swing = data.swing;
+
+        // обновление UI
+        document.querySelectorAll('.pad').forEach(pad => {
+            const sound = pad.dataset.sound;
+            const step = parseInt(pad.dataset.step);
+
+            pad.classList.toggle('active', sequence[sound][step]);
+        });
+    };
+
+    reader.readAsText(file);
+});
+
+function saveProject() {
+    const data = {
+        sequence,
+        mutedTracks,
+        bpm,
+        swing
+    };
+
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'beat-project.json';
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
