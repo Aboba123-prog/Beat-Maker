@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="img/beat_maker_logo.png">
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -15,14 +17,14 @@
                 <span>16 STEPS</span>
             </div>
         </div>
-        
+
         <div class="top-controls">
             <div class="control-group">
                 <label for="bpm">BPM</label>
                 <input type="range" id="bpm" min="40" max="200" value="120">
                 <span id="bpmValue">120</span>
             </div>
-            
+
             <div class="control-group">
                 <label for="swing">SWING</label>
                 <input type="range" id="swing" min="0" max="100" value="0">
@@ -40,6 +42,7 @@
                 <button id="stopBtn" class="btn btn-stop">⏹ STOP</button>
                 <button id="clearBtn" class="btn btn-clear">🗑️ CLEAR</button>
                 <button id="downloadBtn" class="btn btn-download">⬇ WAV</button>
+                <button id="loadBtn" class="btn btn-load">⬆ WAV</button>
             </div>
         </div>
 
@@ -111,7 +114,8 @@
             <p>Нажимайте квадраты для создания битов • M - отключить трек • Экспериментируйте!</p>
         </div>
     </div>
-
+<input type="file" id="fileInput" accept=".json" hidden>
     <script src="script.js"></script>
 </body>
+
 </html>
